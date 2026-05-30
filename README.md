@@ -57,22 +57,6 @@ To adjust the weight values:
    ```
 2. **Dynamic Overrides (UI-level):**
    The Streamlit sidebar exposes slider controls for each weight. These sliders load the default values from the selected scenario and reset to the scenario's JSON defaults whenever you choose a different scenario from the dropdown.
-3. **Dynamic Overrides (Code-level):**
-   When initializing the `SchedulerSimulation` programmatically, you can override the weights by modifying the configuration dictionary passed to the class:
-   ```python
-   # Load configuration
-   import json
-   with open("data/scenario_1.json", "r") as f:
-       scenario_data = json.load(f)
-
-   # Adjust parameters dynamically
-   scenario_data["weights"]["individual_wait"] = 2.0
-   scenario_data["weights"]["operator_grouping"] = 0.5
-
-   # Run simulation with new values
-   sim = SchedulerSimulation(scenario_data)
-   bus_logs, station_logs = sim.run()
-   ```
 
 ---
 
