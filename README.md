@@ -1,4 +1,4 @@
-# README.md
+# Bus Charging Scheduling
 
 This repository contains an event-driven simulator and user interface designed to model, analyze, and optimize charging schedules for an electric bus fleet. The codebase leverages a Discrete Event Simulation (DES) paradigm to handle complex temporal interactions and resource constraints.
 
