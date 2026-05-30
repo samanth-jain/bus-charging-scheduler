@@ -1,0 +1,207 @@
+{
+  "metadata": {
+    "scenario_id": "scenario_3",
+    "name": "Asymmetric Load",
+    "description": "10 outbound, 4 inbound."
+  },
+  "global_parameters": {
+    "battery_range_km": 240,
+    "charge_time_to_full_minutes": 25,
+    "speed_km_per_hour": 60
+  },
+  "network": {
+    "stations": [
+      {
+        "id": "BLR",
+        "name": "Bengaluru",
+        "type": "terminal",
+        "chargers": 999
+      },
+      {
+        "id": "STN_A",
+        "name": "A",
+        "type": "transit",
+        "chargers": 1
+      },
+      {
+        "id": "STN_B",
+        "name": "B",
+        "type": "transit",
+        "chargers": 1
+      },
+      {
+        "id": "STN_C",
+        "name": "C",
+        "type": "transit",
+        "chargers": 1
+      },
+      {
+        "id": "STN_D",
+        "name": "D",
+        "type": "transit",
+        "chargers": 1
+      },
+      {
+        "id": "KOC",
+        "name": "Kochi",
+        "type": "terminal",
+        "chargers": 999
+      }
+    ],
+    "routes": [
+      {
+        "route_id": "BLR_KOC",
+        "direction": "outbound",
+        "path": [
+          {
+            "from": "BLR",
+            "to": "STN_A",
+            "distance_km": 100
+          },
+          {
+            "from": "STN_A",
+            "to": "STN_B",
+            "distance_km": 120
+          },
+          {
+            "from": "STN_B",
+            "to": "STN_C",
+            "distance_km": 100
+          },
+          {
+            "from": "STN_C",
+            "to": "STN_D",
+            "distance_km": 120
+          },
+          {
+            "from": "STN_D",
+            "to": "KOC",
+            "distance_km": 100
+          }
+        ]
+      },
+      {
+        "route_id": "KOC_BLR",
+        "direction": "inbound",
+        "path": [
+          {
+            "from": "KOC",
+            "to": "STN_D",
+            "distance_km": 100
+          },
+          {
+            "from": "STN_D",
+            "to": "STN_C",
+            "distance_km": 120
+          },
+          {
+            "from": "STN_C",
+            "to": "STN_B",
+            "distance_km": 100
+          },
+          {
+            "from": "STN_B",
+            "to": "STN_A",
+            "distance_km": 120
+          },
+          {
+            "from": "STN_A",
+            "to": "BLR",
+            "distance_km": 100
+          }
+        ]
+      }
+    ]
+  },
+  "weights": {
+    "individual_wait": 1.0,
+    "operator_grouping": 1.0,
+    "overall_time": 1.0
+  },
+  "departures": [
+    {
+      "bus_id": "bus-BK-01",
+      "operator": "kpn",
+      "route_id": "BLR_KOC",
+      "departure_time_mins": 1140
+    },
+    {
+      "bus_id": "bus-BK-02",
+      "operator": "freshbus",
+      "route_id": "BLR_KOC",
+      "departure_time_mins": 1155
+    },
+    {
+      "bus_id": "bus-BK-03",
+      "operator": "flixbus",
+      "route_id": "BLR_KOC",
+      "departure_time_mins": 1170
+    },
+    {
+      "bus_id": "bus-BK-04",
+      "operator": "kpn",
+      "route_id": "BLR_KOC",
+      "departure_time_mins": 1185
+    },
+    {
+      "bus_id": "bus-BK-05",
+      "operator": "freshbus",
+      "route_id": "BLR_KOC",
+      "departure_time_mins": 1200
+    },
+    {
+      "bus_id": "bus-BK-06",
+      "operator": "flixbus",
+      "route_id": "BLR_KOC",
+      "departure_time_mins": 1215
+    },
+    {
+      "bus_id": "bus-BK-07",
+      "operator": "kpn",
+      "route_id": "BLR_KOC",
+      "departure_time_mins": 1230
+    },
+    {
+      "bus_id": "bus-BK-08",
+      "operator": "freshbus",
+      "route_id": "BLR_KOC",
+      "departure_time_mins": 1245
+    },
+    {
+      "bus_id": "bus-BK-09",
+      "operator": "flixbus",
+      "route_id": "BLR_KOC",
+      "departure_time_mins": 1260
+    },
+    {
+      "bus_id": "bus-BK-10",
+      "operator": "kpn",
+      "route_id": "BLR_KOC",
+      "departure_time_mins": 1275
+    },
+    {
+      "bus_id": "bus-KB-01",
+      "operator": "freshbus",
+      "route_id": "KOC_BLR",
+      "departure_time_mins": 1140
+    },
+    {
+      "bus_id": "bus-KB-02",
+      "operator": "flixbus",
+      "route_id": "KOC_BLR",
+      "departure_time_mins": 1175
+    },
+    {
+      "bus_id": "bus-KB-03",
+      "operator": "kpn",
+      "route_id": "KOC_BLR",
+      "departure_time_mins": 1210
+    },
+    {
+      "bus_id": "bus-KB-04",
+      "operator": "freshbus",
+      "route_id": "KOC_BLR",
+      "departure_time_mins": 1245
+    }
+  ]
+}
