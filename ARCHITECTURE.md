@@ -18,9 +18,9 @@ A Discrete Event Simulation offers several practical advantages:
 ### Dynamic Look-Ahead Routing Policy:
 
 - It is assumed that a bus evaluates network topology dynamically rather than using hardcoded battery percentages.
-- A bus will opportunistically charge if a charger is free AND its current battery is insufficient to bypass the *next* sequential station ($Battery Range < Distance_1 + Distance_2$). This leapfrog heuristic optimally distributes fleet charging to prevent bottlenecking at deeper stations.
+- A bus will opportunistically charge if a charger is free AND its current battery is insufficient to bypass the *next* sequential station (`Battery Range < Distance_1 + Distance_2`). This leapfrog heuristic optimally distributes fleet charging to prevent bottlenecking at deeper stations.
 - It is Route-Agnostic: Whether the stations are 10 km apart or 200 km apart, the bus mathematically guarantees it won't willingly drive into a bottleneck if it doesn't have the range to escape it.
-- It Self-Corrects for Battery Tech: If we change `battery_range_km: 240` to `500` in the JSON, we don't have to rethink our percentages. The bus will naturally realize that $500 \text{ km}$ is much greater than $D_1 + D_2$ and will confidently skip the station, optimizing for speed.
+- It Self-Corrects for Battery Tech: If we change `battery_range_km: 240` to `500` in the JSON, we don't have to rethink our percentages. The bus will naturally realize that 500 km is much greater than `D_1` + `D_2` and will confidently skip the station, optimizing for speed.
 
 ---
 
@@ -85,39 +85,41 @@ During execution, internal states are managed via structured Dataclasses:
 
 ## 3. How weights work
 
-When multiple buses are waiting in a station's queue, the scheduler determines the charging sequence by selecting the bus with the highest priority score. 
+When multiple buses are waiting in a station's queue, the scheduler determines the charging sequence by selecting the bus with the highest priority score.
 
 The priority score is calculated using three terms, each multiplied by its respective weight:
 
-$$\text{Priority Score} = (w_{\text{individual\_wait}} \times \text{WaitTime}) + (w_{\text{operator\_grouping}} \times \text{TimeSinceOpCharged}) + (w_{\text{overall\_time}} \times \text{TotalTripTime})$$
+```text
+Priority Score = (w_individual_wait × WaitTime) + (w_operator_grouping × TimeSinceOpCharged) + (w_overall_time × TotalTripTime)
+```
 
 Here is an explanation of how each term behaves and how adjusting its weight alters the behavior of the fleet.
 
-### 1. Individual Wait Weight ($w_{\text{individual\_wait}}$)
+### 1. Individual Wait Weight (`w_individual_wait`)
 
-* **Associated Metric:** $\text{WaitTime} = \text{CurrentTime} - \text{QueueJoinTime}$
+* **Associated Metric:** `WaitTime = CurrentTime - QueueJoinTime`
 * **What it measures:** The duration (in minutes) a bus has been stationary in the queue at the current station.
-* **How it affects the score:** This value increases linearly by $+1$ for every minute a bus sits waiting. 
+* **How it affects the score:** This value increases linearly by `+1` for every minute a bus sits waiting. 
 * **Operational Impact:**
   * **High Weight:** Forces the queue to behave like a strict **First-In, First-Out (FIFO)** system. The bus that arrived first will almost always be charged first, regardless of its operator or departure time.
   * **Low Weight:** Allows other scheduling factors (like helping late-running buses or maintaining operator fairness) to override the arrival order.
 
 
-### 2. Operator Grouping Weight ($w_{\text{operator\_grouping}}$)
+### 2. Operator Grouping Weight (`w_operator_grouping`)
 
-* **Associated Metric:** $\text{TimeSinceOpCharged} = \text{CurrentTime} - \text{LastChargeTimeByOperator}$
+* **Associated Metric:** `TimeSinceOpCharged = CurrentTime - LastChargeTimeByOperator`
 * **What it measures:** The elapsed time since any bus belonging to the same operator (e.g., KPN, Freshbus, or Flixbus) last initiated a charge.
 * **How it affects the score:** 
-  * If an operator's bus has just started charging, this value resets to $0$ for all other waiting buses of that same operator, reducing their priority.
+  * If an operator's bus has just started charging, this value resets to `0` for all other waiting buses of that same operator, reducing their priority.
   * If an operator has not charged any bus for a long time, this value grows, increasing the priority of its waiting buses.
 * **Operational Impact:**
-  * **High Weight:** Promotes **round-robin interleaving** among operators (e.g., KPN $\rightarrow$ Freshbus $\rightarrow$ Flixbus $\rightarrow$ KPN). It prevents a dominant operator with a large fleet from **monopolizing** a station and blocking smaller competitors.
+  * **High Weight:** Promotes **round-robin interleaving** among operators (e.g., KPN → Freshbus → Flixbus → KPN). It prevents a dominant operator with a large fleet from **monopolizing** a station and blocking smaller competitors.
   * **Low Weight:** Allows batching. If one operator has several buses arrive together, they may charge back-to-back, leaving other operators waiting.
 
 
-### 3. Overall Time Weight ($w_{\text{overall\_time}}$)
+### 3. Overall Time Weight (`w_overall_time`)
 
-* **Associated Metric:** $\text{TotalTripTime} = \text{CurrentTime} - \text{DepartureTime}$
+* **Associated Metric:** `TotalTripTime = CurrentTime - DepartureTime`
 * **What it measures:** The total time elapsed since the bus departed its original terminal (Bengaluru or Kochi).
 * **How it affects the score:** Buses that started their journeys earlier will have a higher baseline score than buses that departed recently.
 * **Operational Impact:**
@@ -131,9 +133,9 @@ When these weights interact, the scheduler balances competing operational goals:
 
 | Tuning Strategy | Primary Behavior | Trade-Off |
 | :--- | :--- | :--- |
-| **High $w_{\text{individual\_wait}}$** | Strict FIFO fairness at each station. | A bus on a long-distance, tight schedule may be held up by a recently departed local bus that arrived minutes earlier. |
-| **High $w_{\text{operator\_grouping}}$** | Balanced charger sharing among competitors. | A bus may be bypassed in the queue by a competitor's bus that arrived later, simply because its own operator recently used a charger. |
-| **High $w_{\text{overall\_time}}$** | Minimizes compounding delays across the network. | Buses that departed recently may experience longer wait times at transit stations as older, long-distance buses are prioritized. |
+| **High `w_individual_wait`** | Strict FIFO fairness at each station. | A bus on a long-distance, tight schedule may be held up by a recently departed local bus that arrived minutes earlier. |
+| **High `w_operator_grouping`** | Balanced charger sharing among competitors. | A bus may be bypassed in the queue by a competitor's bus that arrived later, simply because its own operator recently used a charger. |
+| **High `w_overall_time`** | Minimizes compounding delays across the network. | Buses that departed recently may experience longer wait times at transit stations as older, long-distance buses are prioritized. |
 
 ---
 
@@ -278,7 +280,7 @@ def _bypass_station(self, bus: Bus, distance_to_next: int, current_time: int):
 
 For modeling clarity and simulation consistency, the following assumptions are applied to the physical and operational model:
 
-1. **Dynamic Look-Ahead Routing Policy:** It is assumed that a bus evaluates network topology dynamically rather than using hardcoded battery percentages. A bus will opportunistically charge if a charger is free AND its current battery is insufficient to bypass the *next* sequential station ($Battery < Distance_1 + Distance_2$). This leapfrog heuristic optimally distributes fleet charging to prevent bottlenecking at deeper stations.
+1. **Dynamic Look-Ahead Routing Policy:** It is assumed that a bus evaluates network topology dynamically rather than using hardcoded battery percentages. A bus will opportunistically charge if a charger is free AND its current battery is insufficient to bypass the *next* sequential station (`Battery < Distance_1 + Distance_2`). This leapfrog heuristic optimally distributes fleet charging to prevent bottlenecking at deeper stations.
 2. **Uniform Speed:** Buses maintain a constant speed of 60 km/h. Dynamic traffic variations, delays, and acceleration or deceleration phases are not modeled.
 3. **Deterministic Charging Profiles:** Charging time is modeled as a fixed 25-minute block to restore batteries from any state of charge to 100%. Linear or non-linear charging curves are omitted.
 4. **Instantaneous Terminal Charging:** Chargers at Bengaluru (BLR) and Kochi (KOC) terminals are assumed to be abundant, charging departing buses instantaneously prior to departure.
