@@ -22,7 +22,7 @@ def load_scenarios():
     return scenarios
 
 def mins_to_time(mins):
-    h = (mins // 60) % 24 # Handle next-day rollovers
+    h = (mins // 60) % 24
     m = mins % 60
     return f"{h:02d}:{m:02d}"
 
@@ -34,7 +34,7 @@ if not scenarios:
 
 # --- SIDEBAR CONTROLS ---
 with st.sidebar:
-    st.title("🔋 EV Fleet Scheduler")
+    st.title("EV Fleet Scheduler")
     st.markdown("Select a scenario to run the simulation and view the optimized charging plan.")
     selected_name = st.selectbox("Scenario", list(scenarios.keys()), key="selected_scenario")
     scenario_data = copy.deepcopy(scenarios[selected_name])
@@ -44,7 +44,6 @@ with st.sidebar:
             st.session_state[f"weight_{key}"] = float(default_value)
         st.session_state["last_selected_scenario"] = selected_name
 
-    # If a reset was requested (from the previous run), apply defaults now
     if st.session_state.get("do_reset"):
         for key, default_value in scenarios[selected_name]["weights"].items():
             st.session_state[f"weight_{key}"] = float(default_value)
@@ -73,7 +72,6 @@ with st.sidebar:
 
     st.button("Reset Weights to Scenario Defaults", on_click=_request_reset)
 
-    # Update scenario weights based on UI controls before simulation
     scenario_data["weights"].update(weight_values)
 
     st.info("**Active weights will be applied when the simulation starts.**")
@@ -92,7 +90,6 @@ except Exception as e:
 
 
 # --- DATA PROCESSING FOR UI ---
-# Map buses to operators using the input JSON
 bus_op_map = {d["bus_id"]: d["operator"] for d in scenario_data["departures"]}
 
 bus_stats = []
@@ -108,7 +105,6 @@ for bus_id in sorted(set([l["bus_id"] for l in bus_logs])):
     trip_time = arrive_time - depart_time
     total_wait = sum(l.get("wait", 0) for l in logs if l["event"] == "CHARGE")
     
-    # Build a readable timeline
     timeline = []
     for log in logs:
         if log["event"] == "DEPART": 
@@ -136,10 +132,10 @@ st.write(scenario_data["metadata"]["description"])
 
 # Create UI Tabs
 tab_dash, tab_bus, tab_stn, tab_raw = st.tabs([
-    "📊 Fleet & Operator Dashboard", 
-    "🚌 Per-Bus Timetable", 
-    "⚡ Station Activity", 
-    "⚙️ Raw Config"
+    "Fleet & Operator Dashboard", 
+    "Per-Bus Timetable", 
+    "Station Activity", 
+    "Raw Config"
 ])
 
 # --- TAB 1: DASHBOARD & OPERATORS ---
@@ -154,7 +150,6 @@ with tab_dash:
     st.markdown("---")
     st.subheader("Operator Fleet Comparison")
     
-    # Aggregate data by Operator
     if not df_bus.empty:
         df_ops = df_bus.groupby("Operator").agg(
             Fleet_Size=("Bus ID", "count"),
@@ -196,34 +191,31 @@ with tab_dash:
 # --- TAB 2: PER-BUS TIMETABLE ---
 with tab_bus:
     st.subheader("Detailed Bus Logs")
-    # Display the full dataframe, formatted nicely
     st.dataframe(df_bus, use_container_width=True, hide_index=True)
 
 # --- TAB 3: PER-STATION ACTIVITY ---
 with tab_stn:
     st.subheader("Charger Utilization Order")
-    col1, col2, col3, col4 = st.columns(4)
     stations = ["STN_A", "STN_B", "STN_C", "STN_D"]
-    cols = [col1, col2, col3, col4]
 
-    for i, stn in enumerate(stations):
-        with cols[i]:
-            st.markdown(f"**Station {stn[-1]}**")
-            stn_data = [l for l in station_logs if l["node"] == stn]
-            if not stn_data:
-                st.info("No buses charged here.")
-                continue
-                
-            df_s = pd.DataFrame(stn_data)
-            # Map operator into the station view too
-            df_s["Operator"] = df_s["bus_id"].map(lambda x: bus_op_map.get(x, "Unknown").capitalize())
-            df_s["Arrived"] = df_s["arrive"].apply(mins_to_time)
-            df_s["Charged"] = df_s["start"].apply(mins_to_time)
-            df_s["Wait"] = df_s["wait"]
+    for stn in stations:
+        st.markdown(f"**Station {stn[-1]}**")
+        stn_data = [l for l in station_logs if l["node"] == stn]
+        if not stn_data:
+            st.info("No buses charged here.")
+            st.markdown("---")
+            continue
             
-            df_display = df_s[["bus_id", "Operator", "Arrived", "Wait", "Charged"]]
-            df_display.columns = ["Bus", "Operator", "Arrived", "Wait (m)", "Start Charge"]
-            st.dataframe(df_display, hide_index=True)
+        df_s = pd.DataFrame(stn_data)
+        df_s["Operator"] = df_s["bus_id"].map(lambda x: bus_op_map.get(x, "Unknown").capitalize())
+        df_s["Arrived"] = df_s["arrive"].apply(mins_to_time)
+        df_s["Charged"] = df_s["start"].apply(mins_to_time)
+        df_s["Wait"] = df_s["wait"]
+        
+        df_display = df_s[["bus_id", "Operator", "Arrived", "Wait", "Charged"]]
+        df_display.columns = ["Bus", "Operator", "Arrived", "Wait (m)", "Start Charge"]
+        st.dataframe(df_display, hide_index=True)
+        st.markdown("---")
 
 # --- TAB 4: RAW DATA ---
 with tab_raw:

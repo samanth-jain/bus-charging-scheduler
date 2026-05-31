@@ -7,7 +7,6 @@ from models import Bus, Station
 
 class SchedulerSimulation:
     def __init__(self, scenario_data: Dict[str, Any]):
-        # Logger for this simulation instance
         self.logger = logging.getLogger(self.__class__.__name__)
 
         try:
@@ -66,7 +65,6 @@ class SchedulerSimulation:
             except Exception as e:
                 tb = traceback.format_exc()
                 self.logger.exception("Unhandled exception processing event %s for bus %s at %s: %s", event_type, bus_id, current_time, e)
-                # keep an error record in the bus logs for diagnostics
                 self.bus_logs.append({
                     "bus_id": bus_id,
                     "event": "ERROR",
