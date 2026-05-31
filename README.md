@@ -57,6 +57,8 @@ To adjust the weight values:
    ```
 2. **Dynamic Overrides (UI-level):**
    The Streamlit sidebar exposes slider controls for each weight. These sliders load the default values from the selected scenario and reset to the scenario's JSON defaults whenever you choose a different scenario from the dropdown.
+   <img width="387" height="491" alt="image" src="https://github.com/user-attachments/assets/89b69f47-4e0c-47cd-bb0f-94fd0f7a8aae" />
+
 
 ---
 
