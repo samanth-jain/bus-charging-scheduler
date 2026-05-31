@@ -4,11 +4,59 @@ import os
 import copy
 import logging
 import traceback
+from datetime import datetime
 import pandas as pd
+
+try:
+    from pymongo import MongoClient
+except ImportError:
+    MongoClient = None
+
 from scheduler import SchedulerSimulation
 
 # --- CONFIGURATION ---
 st.set_page_config(page_title="EV Fleet Scheduler", page_icon="🔋", layout="wide")
+
+MONGODB_URL = os.getenv("MONGODB_URL")
+DATABASE_NAME = os.getenv("DATABASE_NAME")
+IMPRESSION_COLLECTION = os.getenv("MONGODB_COLLECTION")
+
+logger = logging.getLogger("ev_fleet_app")
+if not logger.handlers:
+    logger.setLevel(logging.INFO)
+    logger.addHandler(logging.StreamHandler())
+
+
+def get_mongo_collection():
+    if MongoClient is None:
+        logger.warning("pymongo not installed; impression logging disabled.")
+        return None
+
+    try:
+        client = MongoClient(MONGODB_URL, serverSelectionTimeoutMS=5000)
+        client.admin.command("ping")
+        return client[DATABASE_NAME][IMPRESSION_COLLECTION]
+    except Exception as e:
+        logger.exception("Failed to connect to MongoDB for impression logging: %s", e)
+        return None
+
+
+def log_impression(scenario_name: str, weights: dict):
+    collection = get_mongo_collection()
+    if collection is None:
+        return
+
+    try:
+        collection.insert_one({
+            "timestamp": datetime.utcnow(),
+            "scenario": scenario_name,
+            "weights": weights,
+            "page": "ev_fleet_scheduler",
+            "session": st.session_state.get("selected_scenario", None),
+        })
+        logger.info("Logged impression for scenario %s", scenario_name)
+    except Exception as e:
+        logger.exception("Failed to insert impression document: %s", e)
 
 def load_scenarios():
     scenarios = {}
@@ -73,6 +121,10 @@ with st.sidebar:
     st.button("Reset Weights to Scenario Defaults", on_click=_request_reset)
 
     scenario_data["weights"].update(weight_values)
+
+    if st.session_state.get("last_impression_scenario") != selected_name:
+        log_impression(selected_name, scenario_data["weights"])
+        st.session_state["last_impression_scenario"] = selected_name
 
     st.info("**Active weights will be applied when the simulation starts.**")
 
